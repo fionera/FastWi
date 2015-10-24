@@ -1,5 +1,6 @@
 #!/bin/sh
 
+#	TODO: Rewrite in Python, then in C; Add better selection Menu; Autic find the rigt monitoring device; Add Whitelist-System;
 
 #########################
 #	VARIABLES	#
