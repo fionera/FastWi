@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="FastWi" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/FastWi" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/FastWi" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-fexceptions" />
+		</Compiler>
+		<Unit filename="aircrack/aireplay-ng.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="aircrack/airodump-ng.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="aircrack/airodump-ng.h" />
+		<Unit filename="aircrack/common.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="aircrack/common.h" />
+		<Unit filename="aircrack/crypto.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="aircrack/crypto.h" />
+		<Unit filename="aircrack/pcap.h" />
+		<Unit filename="aircrack/uniqueiv.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="aircrack/uniqueiv.h" />
+		<Unit filename="aircrack/version.h" />
+		<Unit filename="main.cpp" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
